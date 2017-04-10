@@ -16,6 +16,8 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -31,11 +33,8 @@ import butterknife.OnClick;
 public class MainActivity extends AppCompatActivity {
 
     public final int LOCATION_PERMISSION_RESULT = 10000;
-    public final int STOP_COUNTER = 123;
-    public final int RESET_COUNTER = 124;
-    public final int START_COUNTER = 111;
 
-    public final int DEFAULT_TIME = 60000;
+    public final int DEFAULT_TIME = 10000;
     int countdown_time;
 
     LocationReciever  locationReciever;
@@ -53,9 +52,14 @@ public class MainActivity extends AppCompatActivity {
 
     @BindView(R.id.main_countdown_text)
     TextView countdownText;
+
+    @BindView(R.id.main_view)
+    View view;
+    GestureListener gestureListener;
     int selectedRadioButton;
 
     Handler mHandler;
+
 
     Runnable countdown = new Runnable() {
         @Override
@@ -66,9 +70,28 @@ public class MainActivity extends AppCompatActivity {
             {
                 mHandler.postDelayed(countdown, 1000);
             }
+            else
+            {
+                toggleTransition();
+                stopCountdown();
+                resetCountdown();
+
+            }
         }
     };
 
+
+    public void toggleTransition()
+    {
+        view.setVisibility(View.VISIBLE);
+        view.setAlpha(0.0f);
+
+        view.animate()
+                .translationY(view.getHeight())
+                .alpha(1.0f)
+                .setDuration(600);
+
+    }
     @OnClick(R.id.main_dialog_button)
     public void radioGroupSelect()
     {
@@ -139,6 +162,16 @@ public class MainActivity extends AppCompatActivity {
         countdown_time = DEFAULT_TIME;
         countdownText.setText(String.valueOf(countdown_time));
         stopCountdownRadio.setVisibility(View.INVISIBLE);
+
+
+        final GestureDetector gdt = new GestureDetector(this, new GestureListener());
+        view.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                gdt.onTouchEvent(event);
+                return true;
+            }
+        });
 
     }
 
@@ -263,7 +296,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
+    private class GestureListener extends GestureDetector.SimpleOnGestureListener
+    {
+        @Override
+        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+            if(velocityY != 0)
+            {
+                view.setVisibility(View.INVISIBLE);
+            }
+            return super.onFling(e1, e2, velocityX, velocityY);
+        }
+    }
 
 
 }

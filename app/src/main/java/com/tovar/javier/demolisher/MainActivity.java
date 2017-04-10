@@ -6,17 +6,21 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.support.annotation.IdRes;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.tovar.javier.demolisher.service.LocationService;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,6 +28,36 @@ public class MainActivity extends AppCompatActivity {
 
     LocationReciever  locationReciever;
     @BindView(R.id.main_location) TextView location;
+    @BindView(R.id.main_radio_group) RadioGroup radioGroup;
+    int selectedRadioButton;
+
+    @OnClick(R.id.main_dialog_button)
+    public void radioGroupSelect()
+    {
+        switch(selectedRadioButton)
+        {
+            case R.id.main_viewpager_radio:
+                goToViewPager();
+                break;
+            case R.id.main_dialog_radio:
+                goToDialog();
+                break;
+            default:
+                Toast.makeText(this, "Please select an option", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void goToViewPager()
+    {
+        Intent intent = new Intent(this, ViewPagerActivity.class);
+        startActivity(intent);
+
+    }
+
+    public void goToDialog()
+    {
+        Log.d(MainActivity.class.toString(), "implement dialog");
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,8 +67,20 @@ public class MainActivity extends AppCompatActivity {
         initLocationReciever();
         askForLocationPermissions();
 
+        radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, @IdRes int checkedId) {
+                selectedRadioButton = checkedId;
+            }
+        });
+
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(locationReciever);
+    }
 
     private void askForLocationPermissions()
     {
@@ -124,10 +170,11 @@ public class MainActivity extends AppCompatActivity {
                         location.setText("Your current location lat: " + lat + " longitude: " + lon);
                         break;
                     case LocationService.notifyPermission:
+                        location.setText("You must allow the app to use Location services");
                         askForLocationPermissions();
 
                 default:
-                    location.setText("theres been an error");
+                    location.setText("theres been an error with the location services");
                 }
             }
         }

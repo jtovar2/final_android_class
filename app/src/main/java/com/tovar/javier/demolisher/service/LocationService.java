@@ -5,6 +5,11 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResolvingResultCallbacks;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationListener;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -17,6 +22,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsResult;
 
 import java.util.Date;
 import java.util.Timer;
@@ -32,7 +38,7 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
 
     GoogleApiClient mGoogleApiClient;
     Location mLastLocation;
-    private Timer mTimer;
+    Timer mTimer;
     LocationRequest mLocationRequest;
 
     private int msg;
@@ -134,6 +140,7 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
     public void onDestroy() {
         super.onDestroy();
 
+        Log.d(LocationService.class.toString(), "we on destroy");
         mGoogleApiClient.disconnect();
         mTimer = null;
         //end location services
@@ -167,12 +174,46 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
         }
 
         mLocationRequest = LocationRequest.create();
-        mLocationRequest.setInterval(20000);
+        mLocationRequest.setInterval(2000);
 
-        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+        PendingResult<Status> statusPendingResult = LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+        Log.d(LocationService.class.toString(), " pending result");
+        statusPendingResult.setResultCallback(new ResultCallback<Status>() {
+            @Override
+            public void onResult(@NonNull Status status) {
+                if(status.isSuccess())
+                {
+                    try {
+                        mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
 
-        mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-        Log.d(LocationService.class.toString(), "timer started and location set");
+                        if (mLastLocation != null) {
+                            Log.d(LocationService.class.toString(), "timer started and location set " + mLastLocation.getLongitude() + " " + mLastLocation.getLatitude());
+                            notifyLocation();
+
+                        } else {
+                            notifyError("unable to get location");
+                        }
+                        startTimer();
+                    }
+                    catch(SecurityException e)
+                    {
+                        Log.d(LocationService.class.toString(), "yooo security exception");
+                    }
+                }
+                if(status.isInterrupted())
+                {
+                    Log.d(LocationService.class.toString(), "message: " +  status.getStatusMessage());
+                    notifyError(status.getStatusMessage());
+                }
+                if(status.isCanceled())
+                {
+                    notifyError("location request canceled");
+                }
+            }
+        });
+
+
+
     }
 
     @Override
@@ -215,5 +256,25 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
     {
         intent.setAction(LocationServiceStatus);
         sendBroadcast(intent);
+    }
+
+    private class updateLocation extends TimerTask {
+        public void run()
+        {
+            if(mLastLocation != null)
+            {
+                notifyLocation();
+            }
+            else
+            {
+                Log.d(LocationService.class.toString(), "last location is null");
+            }
+        }
+    }
+
+    private void startTimer()
+    {
+        mTimer = new Timer();
+        mTimer.schedule(new updateLocation(), 0, 20000);
     }
 }

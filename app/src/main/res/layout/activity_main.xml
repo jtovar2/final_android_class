@@ -14,4 +14,26 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/main_location" />
+    <RadioGroup
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/main_location"
+        android:id="@+id/main_radio_group">
+        <RadioButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Go to ViewPager"
+            android:id="@+id/main_viewpager_radio"/>
+        <RadioButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pop up custom dialog"
+        android:id="@+id/main_dialog_radio"/>
+    </RadioGroup>
+    <Button android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Select"
+        android:layout_below="@id/main_radio_group"
+        android:id="@+id/main_dialog_button"
+        ></Button>
 </RelativeLayout>

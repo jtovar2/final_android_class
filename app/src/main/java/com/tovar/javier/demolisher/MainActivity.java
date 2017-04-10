@@ -6,12 +6,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.os.StrictMode;
 import android.support.annotation.IdRes;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,11 +31,43 @@ import butterknife.OnClick;
 public class MainActivity extends AppCompatActivity {
 
     public final int LOCATION_PERMISSION_RESULT = 10000;
+    public final int STOP_COUNTER = 123;
+    public final int RESET_COUNTER = 124;
+    public final int START_COUNTER = 111;
+
+    public final int DEFAULT_TIME = 60000;
+    int countdown_time;
 
     LocationReciever  locationReciever;
     @BindView(R.id.main_location) TextView location;
     @BindView(R.id.main_radio_group) RadioGroup radioGroup;
+
+    @BindView(R.id.main_countdown_start_radio)
+    RadioButton startCountdownRadio;
+
+    @BindView(R.id.main_countdown_stop_radio)
+    RadioButton stopCountdownRadio;
+
+    @BindView(R.id.main_countdown_reset_radio)
+    RadioButton resetCountdownRadio;
+
+    @BindView(R.id.main_countdown_text)
+    TextView countdownText;
     int selectedRadioButton;
+
+    Handler mHandler;
+
+    Runnable countdown = new Runnable() {
+        @Override
+        public void run() {
+                countdown_time = countdown_time - 1000;
+                countdownText.setText(String.valueOf(countdown_time));
+            if(!(countdown_time == 0))
+            {
+                mHandler.postDelayed(countdown, 1000);
+            }
+        }
+    };
 
     @OnClick(R.id.main_dialog_button)
     public void radioGroupSelect()
@@ -39,8 +77,14 @@ public class MainActivity extends AppCompatActivity {
             case R.id.main_viewpager_radio:
                 goToViewPager();
                 break;
-            case R.id.main_dialog_radio:
-                goToDialog();
+            case R.id.main_countdown_start_radio:
+                startCountdown();
+                break;
+            case R.id.main_countdown_reset_radio:
+                resetCountdown();
+                break;
+            case R.id.main_countdown_stop_radio:
+                stopCountdown();
                 break;
             default:
                 Toast.makeText(this, "Please select an option", Toast.LENGTH_SHORT).show();
@@ -54,10 +98,27 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void goToDialog()
+    public void startCountdown()
     {
-        Log.d(MainActivity.class.toString(), "implement dialog");
+        startCountdownRadio.setVisibility(View.INVISIBLE);
+        stopCountdownRadio.setVisibility(View.VISIBLE);
+        mHandler.postDelayed(countdown, 1000);
     }
+
+    public void stopCountdown()
+    {
+        stopCountdownRadio.setVisibility(View.INVISIBLE);
+        startCountdownRadio.setVisibility(View.VISIBLE);
+        mHandler.removeCallbacks(countdown);
+    }
+
+    public void resetCountdown()
+    {
+        countdown_time = DEFAULT_TIME;
+        countdownText.setText(String.valueOf(countdown_time));
+
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,12 +135,34 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        initHandler();
+        countdown_time = DEFAULT_TIME;
+        countdownText.setText(String.valueOf(countdown_time));
+        stopCountdownRadio.setVisibility(View.INVISIBLE);
+
     }
 
+
+    public void initHandler()
+    {
+        mHandler = new Handler(Looper.getMainLooper());
+    }
     @Override
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(locationReciever);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        stopCountdown();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        stopCountdown();
     }
 
     private void askForLocationPermissions()
@@ -179,4 +262,8 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
+
+
+
 }

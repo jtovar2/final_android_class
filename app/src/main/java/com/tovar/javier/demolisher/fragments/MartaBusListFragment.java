@@ -7,12 +7,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import com.tovar.javier.demolisher.BaseMartaFragment;
 import com.tovar.javier.demolisher.R;
 import com.tovar.javier.demolisher.adapters.MartaBusListAdapter;
+import com.tovar.javier.demolisher.dialogs.MartaRouteMapDialog;
 import com.tovar.javier.demolisher.model.MartaBus;
 
 import java.util.List;
@@ -41,6 +43,7 @@ public class MartaBusListFragment extends Fragment implements BaseMartaFragment 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        adapter = new MartaBusListAdapter(this.getContext());
 
 
 
@@ -57,14 +60,24 @@ public class MartaBusListFragment extends Fragment implements BaseMartaFragment 
         busList = (ListView) rootView.findViewById(R.id.marta_bus_list_fragment_list);
 
         busList.setEmptyView(emptyView);
-        if(adapter == null)
-        {
-            adapter = new MartaBusListAdapter(this.getContext());
-        }
+
         busList.setAdapter(adapter);
+        busList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                MartaBus bus = (MartaBus) adapter.getItem(position);
+                getRouteMap(bus.getRoute());
+            }
+        });
         return rootView;
     }
 
+
+    public void getRouteMap(String route)
+    {
+        MartaRouteMapDialog dialog = new MartaRouteMapDialog(this.getContext(), route);
+        dialog.show();
+    }
 
     @Override
     public void onAttach(Context context) {

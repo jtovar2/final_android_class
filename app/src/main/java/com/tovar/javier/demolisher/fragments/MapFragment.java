@@ -136,14 +136,14 @@ public class MapFragment extends Fragment implements BaseMartaFragment{
             user.setPosition(position);
         }
 
-        else
+        else if (googleMap != null)
         {
             MarkerOptions options = new MarkerOptions().position(position).title("This is you").snippet("Your geolocation");
             user = googleMap.addMarker(options);
 
         }
 
-        if(userCameraZoomToggle)
+        if(userCameraZoomToggle && googleMap != null)
         {
             userCameraZoomToggle = false;
             updateCameraZoom();

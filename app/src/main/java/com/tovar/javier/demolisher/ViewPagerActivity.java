@@ -10,6 +10,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.Toast;
 
 
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import retrofit2.Call;
@@ -51,6 +53,9 @@ public class ViewPagerActivity extends AppCompatActivity
     LatLng currentLocation;
     MartaApi martaApi;
     Timer mTimer;
+    boolean timerRunning;
+    @BindView(R.id.view_pager_toggle_data)
+    Button ToggleData;
 
 
     @OnClick(R.id.view_pager_next_fragment)
@@ -98,6 +103,10 @@ public class ViewPagerActivity extends AppCompatActivity
     protected void onStart() {
         super.onStart();
         initRetrofit();
+        if(!timerRunning)
+        {
+            startTimer();
+        }
     }
 
     public void initRetrofit()
@@ -109,7 +118,7 @@ public class ViewPagerActivity extends AppCompatActivity
                 .build();
 
         martaApi = retrofit.create(MartaApi.class);
-        startTimer();
+
     }
 
 
@@ -147,10 +156,11 @@ public class ViewPagerActivity extends AppCompatActivity
     @Override
     protected void onStop() {
         super.onStop();
-        if(mTimer != null)
+        if(timerRunning)
         {
-            mTimer.cancel();
+            startTimer();
         }
+
     }
 
     private void initLocationReciever()
@@ -199,7 +209,7 @@ public class ViewPagerActivity extends AppCompatActivity
                 @Override
                 public void onResponse(Call<List<MartaBus>> call, Response<List<MartaBus>> response) {
                     List<MartaBus> buses = response.body();
-                    if(buses != null && mapFragment.isGoogleMapInit()) {
+                    if(buses != null && mapFragment.isGoogleMapInit() && !buses.isEmpty()) {
                         mapFragment.updateMartaInfo(buses);
                         busListFragment.updateMartaInfo(buses);
                     }
@@ -209,7 +219,7 @@ public class ViewPagerActivity extends AppCompatActivity
                         Log.d(ViewPagerActivity.class.toString(), response.body().toString());
 
                     }
-                    Toast.makeText(getBaseContext(), "Successfully downloaded bus data", Toast.LENGTH_SHORT).show();
+
                 }
 
                 @Override
@@ -222,9 +232,34 @@ public class ViewPagerActivity extends AppCompatActivity
 
     private void startTimer()
     {
+        timerRunning = true;
         mTimer = new Timer();
         mTimer.schedule(new getMartaData(), 0, 10000);
+        ToggleData.setText("Stop Marta Data");
     }
 
+    private void stopTimer()
+    {
+        ToggleData.setText("Start Marta Data");
+        timerRunning = false;
+        mTimer.cancel();
+        mTimer = null;
+    }
+
+    @OnClick(R.id.view_pager_toggle_data)
+    public void toggleMartaData()
+    {
+        if(!timerRunning)
+        {
+            startTimer();
+
+
+        }
+        else
+        {
+            stopTimer();
+
+        }
+    }
 
 }
